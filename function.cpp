@@ -17,6 +17,7 @@
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include <string.h>
 
 // Update these with values suitable for your network.
 
@@ -25,12 +26,10 @@ const char* pswd = "omin6743";
 const char* mqtt_server = "192.168.168.202";
 const char* topic = "blanket";    // rhis is the [root topic]
 
-long timeBetweenMessages = 1000 * 20 * 1;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
-long lastMsg = 0;
-int value = 0;
+int count = 0;
 
 int status = WL_IDLE_STATUS;     // the starting Wifi radio's status
 
@@ -55,21 +54,20 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
+
   for (int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
   }
+
+  char* str[5] = (char*) payload;
+	char command;
+	strcpy( command, str );
+	Serial.print(command) ;
+
+	Serial.print((char*) payload) ;
+
   Serial.println();
-
-  // Switch on the LED if an 1 was received as first character
-  if ((char)payload[0] == '1') {
-    digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
-    // but actually the LED is on; this is because
-    // it is acive low on the ESP-01)
-  } else {
-    digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
-  }
 }
-
 
 String macToStr(const uint8_t* mac)
 {
@@ -137,8 +135,10 @@ void loop() {
   }
   client.loop();
   //--------------------------------Function start--------------------------------
-	String payload = "I'm happy!" ;
-
+	String payload = "I'm happy! " ;
+	payload += count ;
+	++count ;
+	//publish
 	String pubTopic;
 	pubTopic += topic ;
 	pubTopic += "/out";
