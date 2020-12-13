@@ -54,45 +54,23 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
 
 	String command ;
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < length; i++) {
 		command += (char)payload[i];
   }
 	Serial.print(command);
   Serial.println("] ");
 //---------------------------Input function start--------------------------------
-  String status = command.substring(0,2) ;
-  String temp = command.substring(2,3) ;
-  String time_ = command.substring(3,4) ;
-  Serial.print("status is : ") ;
-  Serial.println(status) ;
-  Serial.print("temperature is : ") ;
-  Serial.println(temp) ;
-  Serial.print("time is : ") ;
-  Serial.println(time_) ;
 
-
-  if(status == "on") {
+  if(command == "on") {
     Serial.println("blanket on") ;
-  } else if (status == "of") {
+  } else if (command == "off") {
     Serial.println("blanket off") ;
-  } else {
-    Serial.println("something's wrong") ;
-  }
-
-  if(temp == "u") {
+  } else if (command == "tempup"){
     Serial.println("temperature up") ;
-  } else if (temp == "d") {
+  } else if (command == "tempdown"){
     Serial.println("temperature down") ;
-  } else {
-    Serial.println("something's wrong") ;
-  }
-
-  if(time_ == "u") {
-    Serial.println("time up") ;
-  } else if (time_ == "d") {
-    Serial.println("time down") ;
-  } else {
-    Serial.println("something's wrong") ;
+  } else if (command == "time"){
+    Serial.println("set time steady") ;
   }
 
 
