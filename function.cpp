@@ -58,8 +58,22 @@ void callback(char* topic, byte* payload, unsigned int length) {
 		command += (char)payload[i];
   }
 	Serial.print(command);
-  Serial.print("] ");
-  Serial.println();
+  Serial.println("] ");
+//---------------------------Input function start--------------------------------
+  char status[3] ;
+  status[0] = command[0] ;
+  status[1] = command[1] ;
+  Serial.print("status is : ") ;
+  Serial.println(status) ;
+  char str[3] = "on" ;
+  if(status == str) {
+    Serial.println("ok") ;
+  } else {
+    Serial.println("no") ;
+  }
+
+
+//---------------------------Input function end--------------------------------
 }
 
 String macToStr(const uint8_t* mac)
@@ -126,16 +140,17 @@ void loop() {
   if (!client.connected()) {
     reconnect();
   }
+  //발행하는 것 없음
   client.loop();
-  //--------------------------------Function start--------------------------------
-	String payload = "I'm happy! " ;
+  //---------------------------Output function start--------------------------------
+	String payload ;
 	payload += count ;
 	++count ;
+	//--------------------------Output function end--------------------------------
 	//publish
 	String pubTopic;
 	pubTopic += topic ;
 	pubTopic += "/out";
 	client.publish( (char*) pubTopic.c_str() , (char*) payload.c_str(), true );
-	delay(1000);
-	//--------------------------------Function end--------------------------------
+	delay(3000);
 }
