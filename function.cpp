@@ -18,7 +18,6 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <string>
-
 // Update these with values suitable for your network.
 
 const char* ssid = "0712023";
@@ -53,27 +52,30 @@ void setup_wifi() {
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
 
-	String command ;
-	for (int i = 0; i < length; i++) {
-		command += (char)payload[i];
+  String command ;
+  for (int i = 0; i < length; i++) {
+    command += (char)payload[i];
   }
-	Serial.print(command);
+  Serial.print(command);
   Serial.println("] ");
 //---------------------------Input function start--------------------------------
 
   if(command == "on") {
+    //전원 켜기
     Serial.println("blanket on") ;
   } else if (command == "off") {
+    //전원 끄기
     Serial.println("blanket off") ;
   } else if (command == "tempup"){
+    //온도 올리기
     Serial.println("temperature up") ;
   } else if (command == "tempdown"){
+    //온도 내리기
     Serial.println("temperature down") ;
   } else if (command == "time"){
-    Serial.println("set time steady") ;
+    //시간 올리기
+    Serial.println("time up") ;
   }
-
-
 
 //---------------------------Input function end--------------------------------
 }
@@ -103,7 +105,7 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
 
-		String clientID = composeClientID() ;
+    String clientID = composeClientID() ;
     // Attempt to connect
     if (client.connect(clientID.c_str())) {
       Serial.println("connected");
@@ -145,14 +147,15 @@ void loop() {
   //발행하는 것 없음
   client.loop();
   //---------------------------Output function start--------------------------------
-	String payload ;
-	payload += count ;
-	++count ;
-	//--------------------------Output function end--------------------------------
-	//publish
-	String pubTopic;
-	pubTopic += topic ;
-	pubTopic += "/out";
-	client.publish( (char*) pubTopic.c_str() , (char*) payload.c_str(), true );
-	delay(3000);
+  //String payload ;
+  //payload += count ;
+  //++count ;
+
+  //--------------------------Output function end--------------------------------
+  //publish
+  //String pubTopic;
+  //pubTopic += topic ;
+  //pubTopic += "/out";
+  //client.publish( (char*) pubTopic.c_str() , (char*) payload.c_str(), true );
+  delay(3000);
 }
