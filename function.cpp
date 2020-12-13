@@ -17,7 +17,7 @@
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <string.h>
+#include <string>
 
 // Update these with values suitable for your network.
 
@@ -60,17 +60,41 @@ void callback(char* topic, byte* payload, unsigned int length) {
 	Serial.print(command);
   Serial.println("] ");
 //---------------------------Input function start--------------------------------
-  char status[3] ;
-  status[0] = command[0] ;
-  status[1] = command[1] ;
+  String status = command.substring(0,2) ;
+  String temp = command.substring(2,3) ;
+  String time_ = command.substring(3,4) ;
   Serial.print("status is : ") ;
   Serial.println(status) ;
-  char str[3] = "on" ;
-  if(status == str) {
-    Serial.println("ok") ;
+  Serial.print("temperature is : ") ;
+  Serial.println(temp) ;
+  Serial.print("time is : ") ;
+  Serial.println(time_) ;
+
+
+  if(status == "on") {
+    Serial.println("blanket on") ;
+  } else if (status == "of") {
+    Serial.println("blanket off") ;
   } else {
-    Serial.println("no") ;
+    Serial.println("something's wrong") ;
   }
+
+  if(temp == "u") {
+    Serial.println("temperature up") ;
+  } else if (temp == "d") {
+    Serial.println("temperature down") ;
+  } else {
+    Serial.println("something's wrong") ;
+  }
+
+  if(time_ == "u") {
+    Serial.println("time up") ;
+  } else if (time_ == "d") {
+    Serial.println("time down") ;
+  } else {
+    Serial.println("something's wrong") ;
+  }
+
 
 
 //---------------------------Input function end--------------------------------
