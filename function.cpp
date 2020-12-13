@@ -136,23 +136,13 @@ void loop() {
     reconnect();
   }
   client.loop();
+  //--------------------------------Function start--------------------------------
+	String payload = "I'm happy!" ;
 
-  long now = millis();
-  if (now - lastMsg > timeBetweenMessages ) {
-    lastMsg = now;
-    ++value;
-    String payload = "{\"micros\":";
-    payload += micros();
-    payload += ",\"counter\":";
-    payload += value;
-    payload += "}";
-    String pubTopic;
-     pubTopic += topic ;
-     pubTopic += "/out";
-    Serial.print("Publish topic: ");
-    Serial.println(pubTopic);
-    Serial.print("Publish message: ");
-    Serial.println(payload);
-    client.publish( (char*) pubTopic.c_str() , (char*) payload.c_str(), true );
-  }
+	String pubTopic;
+	pubTopic += topic ;
+	pubTopic += "/out";
+	client.publish( (char*) pubTopic.c_str() , (char*) payload.c_str(), true );
+	delay(1000);
+	//--------------------------------Function end--------------------------------
 }
