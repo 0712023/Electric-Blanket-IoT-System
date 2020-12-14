@@ -3,13 +3,15 @@ var status = global.get('status') || 'off';
 var temp = global.get('temp') || 0;
 var time = global.get('time') || 0;
 
-
-if (msg.payload.status == 'on') {
-  //mqtt로 아두이노로 켜라는 명령
-  status = 'on' ;
-  global.set('status', status) ;
-  msg.payload = [status, temp, time] ;
-  return msg ;
+if (status == 'off') {
+  if (msg.payload.status == 'on') {
+    //mqtt로 아두이노로 켜라는 명령
+    status = 'on' ;
+    global.set('status', status) ;
+  } else {
+    msg.payload = [status, temp, time] ;
+    return msg ;
+  }
 } else if (msg.payload.status == 'off') {
   //mqtt로 아두이노로 끄라는 명령
   status = 'off' ;
