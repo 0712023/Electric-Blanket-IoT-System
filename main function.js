@@ -1,7 +1,7 @@
 //http response를 위한 변수(휴대폰으로 현재상태 확인)
 var status = global.get('status') || 'off';
 var temp = global.get('temp') || 0;
-var time = global.get('time') || 0;
+var time = global.get('time') || 'off';
 
 if (status == 'off') {
   if (msg.payload.status == 'on') {
@@ -18,7 +18,7 @@ if (status == 'off') {
   global.set('status', status) ;
   temp = 0 ;
   global.set('temp', temp) ;
-  time = 0 ;
+  time = 'off' ;
   global.set('time', time) ;
   return msg ;
 }else if (msg.payload.temp == 'up') {
@@ -35,10 +35,10 @@ if (status == 'off') {
     global.set('temp', temp) ;
     return msg ;
   }
-} else if (msg.payload.time == 'up') {
-  //mqtt로 시간을 올리라는 명령
-  msg.payload = 'time' ;
-  time++ ;
+} else if (msg.payload.time == 'steady') {
+  time = 'steady' ;
   global.set('time', time) ;
+  //mqtt로 시간을 주기적으로 올리는 명령
+  msg.payload = 'time' ;
   return msg ;
 }
