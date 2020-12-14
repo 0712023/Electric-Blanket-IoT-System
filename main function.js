@@ -25,17 +25,21 @@ if (status == 'off') {
   temp++ ;
   global.set('temp', temp) ;
 } else if (msg.payload.temp == 'down') {
-  //mqtt로 온도를 내리라는 명령
-  temp-- ;
-  global.set('temp', temp) ;
+  if (temp !== 0) {
+    //mqtt로 온도를 내리라는 명령
+    temp-- ;
+    global.set('temp', temp) ;
+  }
 } else if (msg.payload.time == 'up') {
   //mqtt로 시간을 올리라는 명령
   time++ ;
   global.set('time', time) ;
 } else if (msg.payload.time == 'down') {
-  //mqtt로 시간을 내리라는 명령
-  time-- ;
-  global.set('time', time) ;
+  if (time !== 0) {
+    //mqtt로 시간을 내리라는 명령
+    time-- ;
+    global.set('time', time) ;
+  }
 }
 msg.payload = [status, temp, time] ;
 return msg ;
