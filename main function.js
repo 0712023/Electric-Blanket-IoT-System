@@ -1,38 +1,34 @@
 //http response를 위한 변수(휴대폰으로 현재상태 확인)
-var status = global.get('status') || 'off';
-var temp = global.get('temp') || 0;
-var time = global.get('time') || 'off';
-
+var status = flow.get('status') || 'off';
+var temp = flow.get('temp') || 0;
+var time = flow.get('time') || 'off';
+//발행하는 topic은 'status', 'tempup', 'tempdown' 3가지
 if (status == 'off') {
   if (msg.payload.status == 'on') {
-    //gpio 스위치 1회 누름
-    status = 'on' ;
-    global.set('status', status) ;
+    msg.topic = 'status' ;
+    flow.set('status', 'on') ;
+    flow.set('time', 'steady') ;
     return msg ;
   }
+  return msg ;
 } else if (msg.payload.status == 'off') {
-  //gpio 스위치 1회 누름
-  status = 'off' ;
-  global.set('status', status) ;
-  temp = 0 ;
-  global.set('temp', temp) ;
-  time = 'off' ;
-  global.set('time', time) ;
+  msg.topic = 'status' ;
+  flow.set('status', 'off') ;
+  flow.set('temp', 0) ;
+  flow.set('time', 'off') ;
   return msg ;
-} else if (msg.payload.temp == 'up') {
-  //gpio 온도 상승 스위치 1회 누름
+} else if (msg.payload.temp > temp) {
   msg.topic = 'tempup' ;
-  global.set('temp', msg.payload.temp) ;
-  msg.payload = msg.payload.temp - temp - 2 ;
+  flow.set('temp', msg.payload.temp) ;
+  msg.payload = msg.payload.temp - temp ; // 여기에다가 실제 온도와 예측 온도와의 조정값 기입
   return msg ;
-} else if (msg.payload.temp == 'down') {
+} else if (msg.payload.temp < temp) {
   if (temp !== 0) {
-    //gpio 온도 하강 스위치 1회 누름
-    temp-- ;
-    global.set('temp', temp) ;
+    msg.topic = 'tempdown' ;
+    flow.set('temp', msg.payload.temp) ;
+    msg.payload = temp - msg.payload.temp ; // 여기에다가 실제 온도와 예측 온도와의 조정값 기입
     return msg ;
   }
-} else if (msg.payload.time == 'steady') {
-  time = 'steady' ;
-  global.set('time', time) ;
+} else {
+  return msg ;
 }
