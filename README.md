@@ -37,14 +37,14 @@ IoT에 최적화된 초소형 아두이노로써, 와이파이 연결이 가능�
   - 모바일 : server에 명령 입력<br>
 <p align=center><img src=https://i.imgur.com/AtKA24j.jpg width=500></p><br>
 
-- Transistor as a switch<br>
+- Transistor as a Switch<br>
   - Emitter와 collecter를 버튼 스위치에 연결
   - Emitter는 GND에도 연결
   - Base를 GPIO port와 1k&#8486; 저항을 통해 연결
   - 버튼 각각에 동일한 방식으로 적용
 <p align=center><img src=https://i.imgur.com/bPii7f6.png width=600></p>
 
-### 2. Electric blanket
+### 2. Electric Blanket
 - 이번 프로젝트에 사용된 전기장판을 컨트롤할 수 있는 컨트롤러에 존재하는 5개의 버튼을 물리적으로 해킹하기 위해 컨트롤러의 나사를 풀고 기판을 드러냈습니다. 이후, 각 버튼의 양쪽을 납땜을 통해 전선과 연결시켰습니다.<br>
 <p align=center><img src=https://i.imgur.com/UjnasBw.jpg width=300> <img src=https://i.imgur.com/7LebJNJ.jpg width=300></p>
 
@@ -121,22 +121,79 @@ ESP8266에는 와이파이 연결에 관한 CPP 예제 라이브러리가 있습
 <p align=center><img src=https://i.imgur.com/a4H0A5X.png></p>
 
 - http 통신을 통한 GPIO 제어는 최종적으로 사용하지 않는 방식입니다. 그 이유는 아래 3. Mobile에서 자세히 설명하겠습니다.
-#### Node-RED UI
+#### 3) Node-RED UI
 - Node-RED의 dashboard 노드들을 활용하여 *http://localhost:1880/ui* 주소를 통해 ui를 구성할 수 있습니다.
 - *up* 버튼은 온도 상승 GPIO에, *down* 버튼은 온도 하강 GPIO에 연결되어 있습니다.
 - *show notification* 노드는 payload를 알림창에 띄워주는 기능을 수행합니다.
 <p align=center><img src=https://i.imgur.com/OuwthqJ.png></p>
 
-#### MQTT
+
+#### 4) MQTT
 - *http://localhost:1883/iot* 주소를 통해 payload에 관계없이 mqtt 신호를 받게 되면 아래 플로우에서 확인할 수 있듯 위에서부터 순서대로 온도상승 &#8594; 온도 하강 &#8594; 온도 상승 3회 GPIO 신호를 전달합니다.
 - 제가 직접 실생활에서 사용했을 때 전기장판의 온도 level이 4에 맞춰져있을 때 가장 적합한 온도가 유지되었습니다. 하지만, 전기장판을 처음 켰을 때 최초 온도 상승 신호가 항상 씹히는 문제가 발생했습니다. 이 문제는 처음에 온도 상승+하강 동작을 하는 것으로 해결했습니다.
-- NFC tag와의 연계는 3. Mobile에서 자세히 설명드리겠습니다.
+- NFC tag와의 연계는 3. Mobile에서 자세히 설명하겠습니다.
 <p align=center><img src=https://i.imgur.com/QOowwsL.png></p>
 
+#### 4) Flow
+```
+어쩌구저쩌구
+```
 ### 3. Mobile
-#### External IP
-#### Node-RED UI
-#### SSH
-#### NFC tag
-<p align=center><img src=https://seritag.com/images/b/sb-main800-45.jpg width = 200></p>
+#### 1) External IP
+- 이 http 통신을 IoT system에 맞게 어떤 환경에서도 전기장판을 제어할 수 있도록 하기 위해 공유기 설정의 버추얼 서버 세팅에서 Node-RED port인 1880을 external port와 연결시켰습니다.
+- 이 과정을 통해 action 어플에서 http request target host를 external ip 및 1880 port를 통해 Raspberry Pi Node-RED server로 접근이 가능합니다.
+
+<p align=center><img src=https://i.imgur.com/AOuKOlq.png width=400><br>공유기 설정</p>
+
+#### 2) SSL Authentication
+- 하지만 Action 어플에서 external ip를 통해 접근하는 것은 보안에 상당히 심각한 상황을 초래할 수 있습니다.
+- 취약한 보안 환경에 처한 Raspberry Pi의 Node-RED를 SSL을 통해 보안성을 보완했고 그 방법은 다음과 같습니다.
+```bash
+openssl genrsa -out node-key.pem 2048
+openssl req -new -sha256 -key node-key.pem -out node-csr.pem
+openssl x509 -req -in node-csr.pem -signkey node-key.pem -out node-cert.pem
+```
+Node-RED의 설정환경인 settings.js에서 아래 코드를 입력해줍니다.
+```js
+https: {
+    key: fs.readFileSync('node-key.pem'),
+    cert: fs.readFileSync('node-cert.pem')
+},
+```
+requireHttps의 value가 true인지 확인해줍니다.
+```js
+requireHttps: true
+```
+- SSL을 통해 Node-RED로 접근하는 통신을 암호화함으로써, 인증을 받은 사용자만이 server에 접근할 수 있도록 해주었습니다.
+#### 3) Http Communication
+##### Action - iPhone Application
+- 아이폰 어플리케이션 'Action'은 특정 host로의 http 통신을 할 수 있습니다.
+- on, off는 'status' key값에 'on', 'off'를 post합니다.
+- 3, 4, 5, 6은 'temp' key값에 '3', '4', '5', '6'을 post합니다.
+- status는 'status' key값에 '0'을 post합니다.
+- Action 어플에서 http request target host는 자기 자신의 경우 127.0.0.1 또는 localhost이고, 같은 공유기 망 내의 경우 internal IP를 통해 접속이 가능합니다. 하지만 언제 어디서나 전기장판을 제어하기 위해 external ip를 통해 http 통신을 구현했습니다.
+<p align=center><img src=https://i.imgur.com/pVWJgS5.jpg width=200> <img src=https://i.imgur.com/3Vj1xoM.jpg width=200><br>Action Application</p>
+
+- 하지만 http 통신을 통한 전기장판 제어는 iPhone 펌웨어 업데이트로 SSL 보안성 강화로 인해 SSL 인증이 더이상 작동하지 않게 되었습니다.
+- 이 문제는 iPhone을 이른바 '탈옥'한 후 특정 api(sslkillswitch.deb)를 설치하여 해결할 수 있었지만, 이는 정상적인 해결방법이라고 보기 힘들었기 때문에 다른 방법을 통해 전기장판을 제어했습니다.
+
+#### 4) Node-RED UI
+- *http://external_ip:1880/ui* 주소를 통해 Node-RED UI에 접속할 수 있습니다. Up 버튼 클릭시 온도 상승, down버튼 클릭시 온도 하강 GPIO에 신호를 전달합니다.
+- 위 주소를 PC 및 모바일 브라우저를 통해 접속해도 같은 기능을 수행할 수 있기 때문에 언제 어디서나 external ip를 통해 전기장판의 온도를 제어할 수 있도록 했습니다.
+<p align=center><img src=https://i.imgur.com/qyu2xzQ.png width=400><br>Node-RED UI</p>
+
+#### 5) SSH with NFC Tag, iPhone Shortcut
+##### NFC Tag
+- NFC는 삼성페이, 교통카드 등 생활 속에서 널리 쓰이는 무선 데이터 전송 방식입니다.
+- 시중에서 아주 저렴한 가격으로 판매하는 nfc tag 스티커를 활용하여 이 tag가 스마트폰에서 인식될 때 특정 행동을 취하는 방법을 사용했습니다.
+<p align=center><img src=https://seritag.com/images/b/sb-main800-45.jpg width = 300><br> NFC Tag 스티커</p>
+
+- iPhone 최신 기종에서 기본 어플리케이션으로 사용 가능한 '자동화'(shortcut)는 여러가지 특정 동작들을 하나의 sequence로 동작하게 해 주는 기능을 가지고 있습니다.
+- 이 '자동화' 어플리케이션에서 특정 nfc tag를 인식했을 때, 특정 host(전기장판 IoT system의 경우 raspberry pi internal ip)로 ssh(port는 22)를 통해 입력값을 전달할 수 있도록 했습니다.
+- 입력값은 localhost로 '/iot' topic으로 "hello"라는 payload를 mqtt로 publish하는 코드입니다.
+<p align=center><img src=https://i.imgur.com/I4Y7EDQ.png width=200><br>자동화 앱 화면</p>
+
+- 그 결과 상단의 *2. Raspberry Pi with Node-RED &#8594; 4) MQTT* 부분의 Node-RED 플로우에 전달되어 4에 해당하는 온도값을 자동으로 설정해주는 동작을 실행하게 됩니다.
+
 ## Review
+처음으로 DIY IoT System을 전기장판을 활용하여 구축해보았는데, 생각보다 기능 그 자체도 중요하지만, 보안, 접근성등을 고려하여 sensor 제어 방식을 설정해야 한다는 것을 배웠습니다. 아쉬웠던 점으로, 처음 목표했던 전체 버튼 제어에 실패하고 전원 버튼을 제어하지 못했다는 점에서 이 프로젝트는 아직 미완성이라고 평가하고 싶습니다. 또한, 전체적으로 mobile 환경에서 sensor 제어까지의 중간 단계가 번잡하고, 데이터들이 거쳐가는 통신 프로토콜의 통일성이 부족한 점이 아쉽습니다. 반면, 만족스런 부분들은 필요에 의해 노력하여 성공적인 IoT system을 구축했고, 실생활에서 매우 편리하게 사용했다는 점입니다. 또한, 이 프로젝트에서 적은 금액(총 5만원 이하)으로 최대의 성과를 달성했다는 점이 매우 만족스러웠습니다. 진행 과정에서 ESP8266 디바이스가 플라스틱 쪼가리가 되고, 보안 관련 부분이 큰 걸림돌이 되는 등의 역경이 있었지만 이를 전부 이겨내고 프로젝트를 성공시킨 경험이 앞으로 수많은 프로젝트를 진행함에 있어서 든든한 밑거름이 될 것이라고 생각합니다.
