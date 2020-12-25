@@ -27,10 +27,46 @@ IoT에 최적화된 초소형 아두이노로써, 와이파이 연결이 가능�
 ## Project Details
 ### 1. Electric blanket
 - 이번 프로젝트에 사용된 전기장판을 컨트롤할 수 있는 리모컨에 존재하는 5개의 버튼을 물리적으로 해킹하기 위해 리모컨의 나사를 풀고 기판을 드러냈습니다. 이후, 각 버튼의 양쪽을 납땜을 통해 전선과 연결시켰습니다.<br>
-<img src=https://i.imgur.com/UjnasBw.jpg><img src=https://i.imgur.com/7LebJNJ.jpg>
+<img src=https://i.imgur.com/UjnasBw.jpg width=400><img src=https://i.imgur.com/7LebJNJ.jpg width=400><br>
+- 위 사진에서 확인할 수 있듯, 실제로 연결된 버튼 쌍(GPIO out, GND)은 3개입니다. 각각 온도 up, 온도 down, 시간 up입니다. 시간 down과 전원on/off 버튼은 납땜을 하지 않았는데 그 이유는 다음과 같습니다.<br>
+  -  시간 down 버튼 : 이 프로젝트 목표는 꺼지지 않는 전기장판이기 때문에 굳이 시간 down 버튼을 제어할 일이 없다고 판단했습니다. 최종 목표를 달성하기 위해 자동으로 1시간마다 시간 up 버튼을 눌러주는 기능만을 계획했기 때문입니다.
+  - 전원 on/off 버튼 : 이 버튼은 최초 목표에서 제어하려고 했던 버튼 중 하나였으나, 실제 demo 실행 과정에서 다른 버튼들보다 높은 전류가 흐르는 것으로 추측합니다. 따라서 일단 다른 버튼들 제어부터 성공시킨 후, 마지막으로 전류 등을 측정하여 이 버튼에 적합한 저항을 구해 시스템을 완성시키기로 결정했습니다.
 ### 2. ESP8266
-- ESP8266에는 GPIO 포트가 15개가 있습니다. 이 GPIO 포트를 활용해서 <br>
+- ESP8266에는 GPIO 포트가 15개가 있습니다. 이 GPIO 포트를 활용해 전기장판 리모컨의 다양한 버튼들을 제어했습니다.<br>
 <img src=https://community.blynk.cc/uploads/default/optimized/2X/8/84533f57f9dbed3b757a73ef018fc0a981dac268_2_690x358.jpg width=500><br>
-ESP8266에는 와이파이 연결에 관한 CPP 예제 라이브러리가 있었습니다. 해당 예제를 활용하여
+ESP8266에는 와이파이 연결에 관한 CPP 예제 라이브러리가 있었습니다. 해당 예제를 활용하여 먼저 ESP8266을 제 방에서 사용하고 있는 wifi에 연결시켜주었고, 해당 예제를 참고하여 mqtt 라이브러리를 통해 server 역할을 수행하는 제 PC와 통신에 성공했습니다.
+- 데이터 전달 알고리즘은 mqtt를 통해 ESP8266로 전달받은 데이터(payload)의 문자열에 따라 구분했습니다.
+  ```cpp
+  void callback(char* topic, byte* payload, unsigned int length) {
+    Serial.print("Message arrived [");
+
+    String command ;
+    for (int i = 0; i < length; i++) {
+      command += (char)payload[i];
+    }
+    
+    Serial.print(command);
+    Serial.println("] ");
+  //---------------------------Input function start--------------------------------
+    if(command == "on") {
+      //전원 켜기
+      Serial.println("blanket on") ;
+    } else if (command == "off") {
+      //전원 끄기
+      Serial.println("blanket off") ;
+    } else if (command == "tempup"){
+      //온도 올리기
+      Serial.println("temperature up") ;
+    } else if (command == "tempdown"){
+      //온도 내리기
+      Serial.println("temperature down") ;
+    } else if (command == "time"){
+      //시간 올리기
+      Serial.println("time up") ;
+    }
+  }
+  ```
+- 이후, GPIO 예제를 통해 
+실제로 아래 ESP8266을 활용하여 이 전원 on/off 버튼을 제어하는 데 시도했지만 실패했고, 그 이후 arduino IDE와도 통신이 되지 않거나 이미 upload되었있던 wifi 통신 test 신호도 잡히지 않는 등, 높은 전류로 인해 ESP8266 디바이스까지 과전류로 회로가 타버린 것으로 추측합니다.
 ### 3. Raspberry Pi
 ## Review
