@@ -24,6 +24,7 @@ IoT에 최적화된 초소형 아두이노로써, 와이파이 연결이 가능�
 ### Software
 - <a href=https://nodered.org/>Node-RED</a><br>
 <img src=https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Node-red-icon.png/200px-Node-red-icon.png>
+
 - <a href=https://www.arduino.cc/>Arduino IDE</a><br>
 <img src=https://www.codewithus.com/img/icons/arduinoicon.png width=300><br>
 
@@ -93,20 +94,49 @@ ESP8266에는 와이파이 연결에 관한 CPP 예제 라이브러리가 있습
 - 이후, GPIO를 제어하기 위해 pinMode() 및 digitalWrite()를 사용했습니다. 위 코드에서 command의 종류에 따라 명령을 구분하여 각각 다른 GPIO port로 신호를 보냈습니다.
 - 온도 up, down 및 시간 up 버튼은 정상적으로 제어가 되었지만, 전원 on/off 버튼을 제어하는 데 실패했습니다. 설상가상 그 이후 arduino IDE와도 통신이 되지 않거나 이미 upload되었있던 wifi 통신 test 신호도 잡히지 않는 등의 증상이 나타났습니다. 이 원인으로 예상보다 높은 전원 on/off 버튼 사이의 전류로 인해 ESP8266 디바이스까지 과전류로 회로가 타버린 것으로 추측합니다.
 - 예상치 못한 실패로 인해 ESP8266을 활용한 IoT 시스템 구축에 차질이 생겼고, 죽어버린 ESP8266의 대안으로 좀 더 안정적이고 성능이 우수한 Raspberry Pi를 활용하여 프로젝트를 진행하기로 결정했습니다.
-### 2. Raspberry Pi
-#### Node-RED
+### 2. Raspberry Pi with Node-RED
+#### 1) GPIO
 - Node-RED에는 Raspberry Pi를 위한 다양한 노드가 존재하는데, 저는 스위치 역할을 하는 2N 5551 transistor의 base에 high 신호를 보내줄 GPIO 노드를 사용했습니다. GPIO 노드는 payload로 1을 전달할 시 high신호를, 0을 전달 시 low신호를 GPIO Out하게 됩니다.
 <p align=center><img src=https://i.imgur.com/Af9Dw2S.png></p>
 <p align=center>GPIO Mapping</p>
 - 물리적인 클릭 동작은 일반적으로 버튼을 눌렀다 짧은 시간 후 떼는 두 가지 동작으로 이루어집니다. 이 동작을 코드로 구현하기 위해 delay 노드를 활용하여 버튼 1회 클릭 명령이 들어오면, 해당 GPIO pin으로 1신호를 주고, 0.5초 지연 후 0 신호를 주는 방식으로 구현했습니다.
 <p align=center><img src=https://i.imgur.com/ftGmpzR.png></p><br>
-전원버튼은 0초/0.5초인 반면 나머지 버튼이 0.5초/1초인 이유는 전원버튼이 가장 먼저 실행되고, 이후 온도상승, 하강, 시간상승 버튼이 동작하도록 하기 위해서입니다.
+전원버튼은 0초/0.5초인 반면 나머지 버튼이 0.5초/1초인 이유는 동시에 여러개의 동작을 수행하는 command가 입력될 경우 전원버튼이 가장 먼저 실행되고, 이후 온도상승, 하강, 시간상승 버튼이 동작하도록 하기 위해서입니다.
 
-- test
+#### 2) HTTP
+- Post를 통해 *http://localhost:1880/iot/blanket* 로 command를 받습니다. Command는 json의 형식으로, 다음과 같습니다.
+```json
+{"status" : "on"}
+{"status" : "off"}
+{"temp" : "up"}
+{"temp" : "down"}
+{"time" : "up"}
+{"time" : "down"}
+```
+- *Main function* 노드에서 http 통신을 통해 전달받은 command에 따라 topic을 설정합니다. 또한, 현재 상태(전원 on/off), 현재온도, 현재 시간 값을 전역변수 'status', 'temp', 'time'에 저장합니다.
+- *data for response*에 현재 상태(전원 on/off), 현재온도, 현재 시간 값을 담아 http response합니다.
+- *전원*, *온도 상승*, *온도 하강* 노드에서 전달받은 topic에 따라 payload GPIO 노드로 전달합니다.
+- *push if time steady* 노드에서 1시간마다 시간 상승 GPIO를 push합니다.
+- *complete* 노드는 해당 노드 위치의 GPIO가 1회 클릭이 완료되면 다시 push합니다. *온도 상승*과 *온도 하강* 노드에서 각각 전역변수 'upnum'과 'downnum'을 통해 자동으로 명령한 횟수만큼 GPIO를 푸쉬하는 기능을 수행합니다.
+<p align=center><img src=https://i.imgur.com/a4H0A5X.png></p>
+
+- http 통신을 통한 GPIO 제어는 최종적으로 사용하지 않는 방식입니다. 그 이유는 아래 3. Mobile에서 자세히 설명하겠습니다.
+#### Node-RED UI
+- Node-RED의 dashboard 노드들을 활용하여 *http://localhost:1880/ui* 주소를 통해 ui를 구성할 수 있습니다.
+- *up* 버튼은 온도 상승 GPIO에, *down* 버튼은 온도 하강 GPIO에 연결되어 있습니다.
+- *show notification* 노드는 payload를 알림창에 띄워주는 기능을 수행합니다.
+<p align=center><img src=https://i.imgur.com/OuwthqJ.png></p>
+
+#### MQTT
+- *http://localhost:1883/iot* 주소를 통해 payload에 관계없이 mqtt 신호를 받게 되면 아래 플로우에서 확인할 수 있듯 위에서부터 순서대로 온도상승 &#8594; 온도 하강 &#8594; 온도 상승 3회 GPIO 신호를 전달합니다.
+- 제가 직접 실생활에서 사용했을 때 전기장판의 온도 level이 4에 맞춰져있을 때 가장 적합한 온도가 유지되었습니다. 하지만, 전기장판을 처음 켰을 때 최초 온도 상승 신호가 항상 씹히는 문제가 발생했습니다. 이 문제는 처음에 온도 상승+하강 동작을 하는 것으로 해결했습니다.
+- NFC tag와의 연계는 3. Mobile에서 자세히 설명드리겠습니다.
+<p align=center><img src=https://i.imgur.com/QOowwsL.png></p>
 
 ### 3. Mobile
-- External IP
-- Node-RED UI
-- SSH
-- NFC tag
+#### External IP
+#### Node-RED UI
+#### SSH
+#### NFC tag
+<p align=center><img src=https://seritag.com/images/b/sb-main800-45.jpg width = 200></p>
 ## Review
