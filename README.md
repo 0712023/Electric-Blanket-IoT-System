@@ -1,4 +1,4 @@
-# IoT Project - Electric Blanket
+# Electric Blanket IoT System
 ## Project Synopsis
 - 진행 기간 : 2019년 겨울
 - 내용
