@@ -1,4 +1,31 @@
 # Electric Blanket IoT System
+## Keywords
+## Contents
+- Project Synopsis
+  - Purpose
+- Tools
+  - Hardware
+  - Software
+- Big Picture
+  - System Circuit Plan
+  - Electric Blanket
+- Project Details
+  - ESP8266
+  - Raspberry Pi with Node-RED
+    - GPIO
+    - HTTP
+    - Node-RED UI
+    - MQTT
+    - Flow
+  - Mobile
+    - External IP
+    - SSL Authentication
+    - Http Communication
+      - Action - iPhone Application
+    - Node-RED UI
+    - SSH with NFC Tag, iPhone Shortcut
+      - NFC Tag
+- Review
 ## Project Synopsis
 - 진행 기간 : 2019년 겨울
 - 내용
